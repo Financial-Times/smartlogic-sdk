@@ -1,0 +1,16 @@
+version: 2.1
+
+orbs:
+  golang-ci: financial-times/golang-ci@1
+
+workflows:
+  build-and-test:
+    jobs:
+      - golang-ci/build-and-test:
+          name: build-and-test-project
+
+  scanning:
+      jobs:
+        - golang-ci/scan:
+            name: scan-dependencies
+            context: cm-team-snyk
