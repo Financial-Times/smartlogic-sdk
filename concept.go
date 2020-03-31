@@ -54,7 +54,6 @@ func (c Concept) MarshalJSON() ([]byte, error) {
 		TopConceptOf: conceptID{
 			ID: c.SchemaObject,
 		},
-		IsDeprecated: []bool{c.IsDeprecated},
 	}
 	if c.Description != "" {
 		input.Description = []wordValue{
@@ -98,7 +97,10 @@ func (c Concept) MarshalJSON() ([]byte, error) {
 			},
 		}
 	}
-
+	// we want to set isDeprecated property in the json-ld representation of the concept only when its value is true
+	if c.IsDeprecated {
+		input.IsDeprecated = []bool{c.IsDeprecated}
+	}
 	return json.Marshal(input)
 }
 

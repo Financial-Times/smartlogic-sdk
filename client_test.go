@@ -175,7 +175,7 @@ func TestClientCreateConceptRequestURIAndBody(t *testing.T) {
 				if err != nil {
 					t.Errorf("invalid body send on add concept: %v", err)
 				}
-				if string(body) != `{"skosxl:prefLabel":[{"skosxl:literalForm":[{"@value":"Test Pref Label","@language":"en"}],"@type":["skosxl:Label"]}],"@type":["skos:Concept","Test Type"],"skos:topConceptOf":{"@id":"Test Concept Schema"},"http://www.ft.com/ontology/isDeprecated":[false]}` {
+				if string(body) != `{"skosxl:prefLabel":[{"skosxl:literalForm":[{"@value":"Test Pref Label","@language":"en"}],"@type":["skosxl:Label"]}],"@type":["skos:Concept","Test Type"],"skos:topConceptOf":{"@id":"Test Concept Schema"}}` {
 					t.Errorf("invalid body send on add concept: got %v", string(body))
 				}
 				return
