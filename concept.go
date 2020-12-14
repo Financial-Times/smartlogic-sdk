@@ -25,16 +25,19 @@ const (
 )
 
 type Concept struct {
+	ID          string
 	PrefLabel   string
 	AltLabels   []string
 	Description string
 
 	Type         string
 	SchemaObject string
+	Broader      string
 
 	TMEIdentifier      string
 	FactsetIdentifier  string
 	WikidataIdentifier string
+	IndustryIdentifier string
 
 	IsDeprecated bool
 }
@@ -51,10 +54,24 @@ func (c Concept) MarshalJSON() ([]byte, error) {
 			Type: []string{"skosxl:Label"},
 		}},
 		Type: []string{"skos:Concept", c.Type},
-		TopConceptOf: conceptID{
-			ID: c.SchemaObject,
-		},
 	}
+
+	if c.ID != "" {
+		input.ID = c.ID
+	}
+
+	if c.SchemaObject != "" {
+		input.TopConceptOf = &conceptID{
+			ID: c.SchemaObject,
+		}
+	}
+
+	if c.Broader != "" {
+		input.Broader = &conceptID{
+			ID: c.Broader,
+		}
+	}
+
 	if c.Description != "" {
 		input.Description = []wordValue{
 			{
@@ -97,6 +114,13 @@ func (c Concept) MarshalJSON() ([]byte, error) {
 			},
 		}
 	}
+	if c.IndustryIdentifier != "" {
+		input.IndustryIdentifier = []conceptValue{
+			{
+				Value: c.IndustryIdentifier,
+			},
+		}
+	}
 	// we want to set isDeprecated property in the json-ld representation of the concept only when its value is true
 	if c.IsDeprecated {
 		input.IsDeprecated = []bool{c.IsDeprecated}
@@ -106,16 +130,19 @@ func (c Concept) MarshalJSON() ([]byte, error) {
 
 // inputConcept is helper struct matching the required input format for creating new concept in the Smartlogic API
 type inputConcept struct {
+	ID          string         `json:"@id,omitempty"`
 	PrefLabel   []conceptLabel `json:"skosxl:prefLabel,omitempty"`
 	AltLabels   []conceptLabel `json:"skosxl:altLabel,omitempty"`
 	Description []wordValue    `json:"http://www.ft.com/ontology/description,omitempty"`
 
-	Type         []string  `json:"@type,omitempty"`
-	TopConceptOf conceptID `json:"skos:topConceptOf,omitempty"`
+	Type         []string   `json:"@type,omitempty"`
+	TopConceptOf *conceptID `json:"skos:topConceptOf,omitempty"`
+	Broader      *conceptID `json:"skos:broader,omitempty"`
 
 	TMEIdentifier      []conceptValue `json:"http://www.ft.com/ontology/TMEIdentifier,omitempty"`
 	FactsetIdentifier  []conceptValue `json:"http://www.ft.com/ontology/factsetIdentifier,omitempty"`
 	WikidataIdentifier []uriValue     `json:"http://www.ft.com/ontology/wikidataIdentifier,omitempty"`
+	IndustryIdentifier []conceptValue `json:"http://www.ft.com/ontology/industryIdentifier,omitempty"`
 
 	IsDeprecated []bool `json:"http://www.ft.com/ontology/isDeprecated,omitempty"`
 }

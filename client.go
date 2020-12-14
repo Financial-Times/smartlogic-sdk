@@ -61,8 +61,8 @@ func (c *Client) CreateConcept(ctx context.Context, concept Concept, task string
 		return errors.New("input concept should have prefLaber defined")
 	}
 
-	if concept.SchemaObject == "" {
-		return errors.New("input concept should have schema defined")
+	if concept.SchemaObject == "" && concept.Broader == "" {
+		return errors.New("input concept should have either schema or broader relation defined")
 	}
 
 	if concept.Type == "" {
