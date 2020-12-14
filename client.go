@@ -130,6 +130,36 @@ func (c *Client) AddConceptMetadataField(ctx context.Context, conceptID, fieldNa
 	return nil
 }
 
+func (c *Client) GetConceptsWithCustomMetadata(ctx context.Context, task string, field string, value string) ([]interface{}, error) {
+	params := url.Values{}
+	params.Add("path", path.Join(
+		fmt.Sprintf("task:%s:%s", c.model, task),
+		"skos:Concept",
+		"meta:transitiveInstance",
+	))
+	params.Add("properties", `rdf:type,meta:displayName,[]`)
+	params.Add("filters", fmt.Sprintf(`subject(<%s>="%s")`, field, value))
+	reqURL := c.baseAPIURL
+	reqURL.RawQuery = params.Encode()
+
+	resp, err := c.makeAuthorizedRequest(ctx, http.MethodGet, reqURL.String(), nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make search request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var data struct {
+		Graph []interface{} `json:"@graph"`
+	}
+
+	err = json.NewDecoder(resp.Body).Decode(&data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read search response: %w", err)
+	}
+
+	return data.Graph, nil
+}
+
 func (c *Client) makeAuthorizedRequest(ctx context.Context, method, url string, body io.Reader) (*http.Response, error) {
 	for accessFailures := 0; accessFailures < MaxAccessFailures; accessFailures++ {
 		req, err := http.NewRequestWithContext(ctx, method, url, body)
