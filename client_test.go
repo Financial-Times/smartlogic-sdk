@@ -209,10 +209,11 @@ func TestClientCreateConceptRequestURIAndBody(t *testing.T) {
 
 func TestClientCreateConcept(t *testing.T) {
 	tests := []struct {
-		name          string
-		serverHandler http.HandlerFunc
-		concept       Concept
-		expectedError bool
+		name           string
+		serverHandler  http.HandlerFunc
+		concept        Concept
+		expectedError  bool
+		ignoreWarnings bool
 	}{
 		{
 			name: "success with 200",
@@ -241,6 +242,24 @@ func TestClientCreateConcept(t *testing.T) {
 				SchemaObject: "Test Concept Schema",
 			},
 			expectedError: false,
+		},
+		{
+			name: "sending ignore warning",
+			serverHandler: http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				if req.URL.Path == "/token" {
+					handleTokenRequest(t, w)
+				}
+				if req.URL.Query().Get("warningsAccepted") != "true" {
+					w.WriteHeader(http.StatusConflict)
+				}
+			}),
+			concept: Concept{
+				PrefLabel:    "Test Pref Label",
+				Type:         "Test Type",
+				SchemaObject: "Test Concept Schema",
+			},
+			ignoreWarnings: true,
+			expectedError:  false,
 		},
 		{
 			name: "invalid concept - no concept pref label",
@@ -328,6 +347,7 @@ func TestClientCreateConcept(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed creating Smartlogic client: %v", err)
 			}
+			client.IgnoreWarnings = test.ignoreWarnings
 			err = client.CreateConcept(ctx, test.concept, "testTask")
 			if err != nil && !test.expectedError {
 				t.Errorf("unexpected error adding new concept: %v", err)
