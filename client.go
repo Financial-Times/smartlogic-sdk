@@ -28,6 +28,8 @@ type Client struct {
 	model       string
 
 	accessToken string
+
+	IgnoreWarnings bool
 }
 
 func NewClient(ctx context.Context, httpClient *http.Client, baseCloudURL *url.URL, clientID, apiKey, model string) (*Client, error) {
@@ -38,11 +40,12 @@ func NewClient(ctx context.Context, httpClient *http.Client, baseCloudURL *url.U
 	apiTokenURL.Path = path.Join(baseCloudURL.Path, "token")
 
 	client := &Client{
-		httpClient:  httpClient,
-		baseAPIURL:  baseAPIURL,
-		apiTokenURL: apiTokenURL,
-		apiKey:      apiKey,
-		model:       model,
+		httpClient:     httpClient,
+		baseAPIURL:     baseAPIURL,
+		apiTokenURL:    apiTokenURL,
+		apiKey:         apiKey,
+		model:          model,
+		IgnoreWarnings: false,
 	}
 
 	accessToken, err := client.getAccessToken(ctx)
@@ -71,9 +74,12 @@ func (c *Client) CreateConcept(ctx context.Context, concept Concept, task string
 
 	// Construct the request url. It looks like smartlogicURL?path=task:MyModel:Mytask/skos:Concept/rdf:instance.
 	reqURL := c.baseAPIURL
-	path := fmt.Sprintf("task:%s:%s/skos:Concept/rdf:instance", c.model, task)
+	rawQuery := fmt.Sprintf("path=task:%s:%s/skos:Concept/rdf:instance", c.model, task)
+	if c.IgnoreWarnings {
+		rawQuery += "&warningsAccepted=true"
+	}
 	// We don't want to encode the path param here.
-	reqURL.RawQuery = fmt.Sprintf("path=%s", path)
+	reqURL.RawQuery = rawQuery
 
 	// Construct the request body, we really on the custom marshalling of the concept object.
 	body, err := json.Marshal(concept)
@@ -101,10 +107,12 @@ func (c *Client) AddConceptMetadataField(ctx context.Context, conceptID, fieldNa
 	// Smartlogic API requires the conceptURI that is part of the path query param to be escaped twice and inside < >.
 	encodedConceptURI := url.QueryEscape(url.QueryEscape(fmt.Sprintf("<%s>", conceptURI)))
 
-	path := fmt.Sprintf("task:%s:%s/%s", c.model, task, encodedConceptURI)
-
+	rawQuery := fmt.Sprintf("path=task:%s:%s/%s", c.model, task, encodedConceptURI)
+	if c.IgnoreWarnings {
+		rawQuery += "&warningsAccepted=true"
+	}
 	// We don't want to encode the path param here.
-	reqURL.RawQuery = fmt.Sprintf("path=%s", path)
+	reqURL.RawQuery = rawQuery
 
 	// Construct the request body.
 	fieldURI := MetadataFieldPrefix + "/" + fieldName
